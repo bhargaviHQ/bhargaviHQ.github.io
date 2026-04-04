@@ -39,6 +39,13 @@ initTheme();
 /* ============================================================
    2. Typing Effect
    ============================================================ */
+const TYPE_SPEED          = 85;   // ms per character when typing
+const DELETE_SPEED        = 55;   // ms per character when deleting
+const PAUSE_AFTER_WORD    = 1800; // ms pause after a word is fully typed
+const PAUSE_BEFORE_NEXT   = 320;  // ms pause before starting the next word
+const TYPING_START_DELAY  = 900;  // ms before the effect begins on page load
+const FADE_IN_STAGGER     = 70;   // ms stagger between sibling fade-in elements
+
 const typedEl   = document.getElementById('typed-text');
 const roles     = ['Data Engineer', 'Data Scientist', 'Software Engineer', 'Data Analyst'];
 let wordIdx     = 0;
@@ -52,21 +59,21 @@ function tick() {
   typedEl.textContent = slice;
   isDeleting ? charIdx-- : charIdx++;
 
-  let delay = isDeleting ? 55 : 85;
+  let delay = isDeleting ? DELETE_SPEED : TYPE_SPEED;
 
   if (!isDeleting && charIdx === word.length) {
-    delay      = 1800;
+    delay      = PAUSE_AFTER_WORD;
     isDeleting = true;
   } else if (isDeleting && charIdx === 0) {
     isDeleting = false;
     wordIdx    = (wordIdx + 1) % roles.length;
-    delay      = 320;
+    delay      = PAUSE_BEFORE_NEXT;
   }
 
   setTimeout(tick, delay);
 }
 
-if (typedEl) setTimeout(tick, 900);
+if (typedEl) setTimeout(tick, TYPING_START_DELAY);
 
 /* ============================================================
    3. Scroll-triggered Fade-in (IntersectionObserver)
@@ -76,9 +83,9 @@ const fadeEls = document.querySelectorAll('.fade-in');
 const fadeObserver = new IntersectionObserver((entries) => {
   entries.forEach((entry, i) => {
     if (entry.isIntersecting) {
-      // Stagger siblings slightly
-      const delay = parseFloat(entry.target.style.transitionDelay || '0') * 1000;
-      setTimeout(() => entry.target.classList.add('visible'), delay > 0 ? 0 : i * 70);
+      // Honour inline transition-delay if set; otherwise stagger siblings
+      const hasDelay = parseFloat(entry.target.style.transitionDelay || '0') > 0;
+      setTimeout(() => entry.target.classList.add('visible'), hasDelay ? 0 : i * FADE_IN_STAGGER);
       fadeObserver.unobserve(entry.target);
     }
   });
